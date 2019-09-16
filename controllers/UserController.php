@@ -2,37 +2,23 @@
 
 namespace app\controllers;
 
-use dektrium\user\controllers\AdminController;
 use dektrium\user\controllers\SecurityController;
-use Yii;
+use dektrium\user\models\LoginForm;
 use yii\filters\AccessControl;
-use yii\web\Controller;
-use yii\web\Response;
 use yii\filters\VerbFilter;
-use app\models\LoginForm;
-use app\models\ContactForm;
 
 class UserController extends SecurityController
 {
-    /**
-     * {@inheritdoc}
-     */
+    /** @inheritdoc */
     public function behaviors()
     {
         return [
             'access' => [
                 'class' => AccessControl::className(),
                 'rules' => [
-                    [
+                    ['allow' => true,
                         'actions' => ['login'],
-                        'allow' => true,
-                        'roles' => ['?'],
-                    ],
-                    [
-                        'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['?'],
-                    ],
+                        'roles' => ['?']],
                 ],
             ],
             'verbs' => [
@@ -45,37 +31,17 @@ class UserController extends SecurityController
     }
 
     /**
-     * {@inheritdoc}
-     */
-    public function actions()
-    {
-        return [
-            'error' => [
-                'class' => 'yii\web\ErrorAction',
-            ],
-            'captcha' => [
-                'class' => 'yii\captcha\CaptchaAction',
-                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
-            ],
-
-        ];
-
-    }
-
-    /**
-     * Displays the login page.
+     * Displays homepage.
      *
-     * @return string|Response
+     * @return string
      */
     public function actionLogin()
     {
-        echo "Adadsasd";
-        die();
         if (!\Yii::$app->user->isGuest) {
             $this->goHome();
         }
 
-        /** @var \dektrium\user\models\LoginForm $model */
+        /** @var LoginForm $model */
         $model = \Yii::createObject(LoginForm::className());
         $event = $this->getFormEvent($model);
 
@@ -85,12 +51,22 @@ class UserController extends SecurityController
 
         if ($model->load(\Yii::$app->getRequest()->post()) && $model->login()) {
             $this->trigger(self::EVENT_AFTER_LOGIN, $event);
-            return $this->goBack();
+
+            if (\Yii::$app->user->identity->is_admin == 1) {
+                return $this->redirect(['/site/user-welcome']);
+            }
+            return $this->redirect(['/site/customer-welcome']);
         }
 
-        return $this->render('login', [
+        return $this->render('//user/login', [
             'model'  => $model,
             'module' => $this->module,
         ]);
     }
+
+    /**
+     * Displays homepage.
+     *
+     * @return string
+     */
 }
